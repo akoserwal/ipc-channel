@@ -31,6 +31,8 @@ use std::time::UNIX_EPOCH;
 use std::thread;
 use mio::unix::EventedFd;
 use mio::{Poll, Token, Events, Ready, PollOpt};
+use uuid::Uuid;
+use std::fs::File;
 
 const MAX_FDS_IN_CMSG: u32 = 64;
 
@@ -594,11 +596,15 @@ impl OsIpcOneShotServer {
             let fd = libc::socket(libc::AF_UNIX, SOCK_SEQPACKET, 0);
             let mut path: Vec<u8>;
             loop {
-                let path_string = CString::new(&b"/tmp/rust-ipc-socket.XXXXXX"[..]).unwrap();
-                path = path_string.as_bytes_with_nul().iter().cloned().collect();
-                if *mkstemp(path.as_mut_ptr() as *mut c_char) == 0 {
+                let uuid = Uuid::new_v4();
+                let path_string = "/tmp/rust-ipc-socket-".to_string() + &uuid.to_string();
+                path = path_string.as_bytes().to_vec().clone();
+
+
+                if let Err(_) = File::create(path_string) {
                     return Err(UnixError::last())
                 }
+
 
                 let (sockaddr, len) = new_sockaddr_un(path.as_ptr() as *const c_char);
                 if libc::bind(fd, &sockaddr as *const _ as *const sockaddr, len as socklen_t) == 0 {
@@ -1076,9 +1082,9 @@ fn S_ISSOCK(mode: mode_t) -> bool {
     (mode & S_IFMT) == S_IFSOCK
 }
 
-extern {
-    fn mkstemp(template: *mut c_char) -> *mut c_char;
-}
+//extern {
+//    fn mkstemp(template: *mut c_char) -> *mut c_char;
+//}
 
 #[repr(C)]
 struct cmsghdr {

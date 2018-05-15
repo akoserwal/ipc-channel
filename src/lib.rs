@@ -24,6 +24,7 @@ extern crate uuid;
                                                 target_os = "openbsd",
                                                 target_os = "freebsd")))]
 extern crate mio;
+extern crate uuid;
 #[cfg(all(not(feature = "force-inprocess"), any(target_os = "linux",
                                                 target_os = "openbsd",
                                                 target_os = "freebsd")))]
